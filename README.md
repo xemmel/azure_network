@@ -86,7 +86,10 @@
 ```
 
 ##### Network Interface
-
+> cannot be created manually for use in a *Private Endpoint*
+> the **Private Endpoint template* will create the **NIC** automatically
+> with a name resolution of *Private Endpoint NAME.nic.GUID*
+> However: the PE arm template does have a property called *customNetworkInterfaceName*
 ```json
 
  {
@@ -316,7 +319,37 @@ $response.Content
 
 [Back to top](#table-of-content)
 
+##### Get Blob Content
 
+```powershell
+
+Clear-Host;
+$storageAccountName = "intprivatestorage";
+$containerName = "private";
+$blobName = "test.txt";
+
+## Without token
+Clear-Host;
+$url = "https://$($storageAccountName).blob.core.windows.net/$($containerName)/$($blobName)";
+
+$response = $null;
+$response = Invoke-WebRequest -Method Get -Uri $url;
+$response.RawContent;
+
+
+## With token
+Clear-Host;
+$url = "https://$($storageAccountName).blob.core.windows.net/$($containerName)/$($blobName)";
+
+$response = $null;
+$response = Invoke-WebRequest -Method Get -Uri $url `
+    -Headers @{
+        "Authorization" = "Bearer $token";
+        "x-ms-version" = "2021-06-08"; };
+$response.RawContent;
+
+
+```
 
 ### General scripts
 
