@@ -3,7 +3,9 @@
 ## Table of Content
 
 4. [Private Endpoints](#private-endpoints)
-
+7. [WebApp Network tests](#webapp-network-tests)
+8. [VM scripts](#vm-scripts)
+9. [General scripts](#general-scripts)
 
 ### Private Endpoints
 
@@ -157,5 +159,116 @@
         }
 
 ```
+
+[Back to top](#table-of-content)
+
+
+### WebApp Network tests
+
+```powershell
+### Test outbound Internet
+tcpping www.jp.dk 
+
+### nslookup
+nameresolver theprivateweb.azurewebsites.net
+nameresolver intdatabase.database.windows.net
+
+```
+
+
+[Back to top](#table-of-content)
+
+### VM scripts
+
+#### Get Token
+
+```powershell
+
+Clear-Host;
+
+$baseUrl = "http://169.254.169.254/metadata/identity/oauth2/token";
+$parameters = "?api-version=2018-02-01&resource=https://graph.microsoft.com/";
+## $parameters = "?api-version=2018-02-01&resource=https://management.azure.com/";
+##$parameters = "?api-version=2018-02-01&resource=https://storage.azure.com/";
+$parameters = "?api-version=2018-02-01&resource=https://database.windows.net/";
+
+
+$url = "$($baseUrl)$($parameters)";
+
+$headers = @{"metadata" = "true"};
+
+$response = invoke-webrequest -Uri $url -Headers $headers;
+## $response.Content;
+$token = $null;
+$token = $response.Content | ConvertFrom-Json | Select-Object -ExpandProperty access_token;
+$token;
+
+
+```
+
+
+[Back to top](#table-of-content)
+
+### General scripts
+
+#### Translate Token
+
+```powershell
+
+$p = $token.Split('.');
+$parts = $p[0];
+if (($parts.Length % 4) -ne 0) {
+    if (($parts.Length % 4) -eq 1) {
+        $parts += "===";
+    }
+        if (($parts.Length % 4) -eq 2) {
+        $parts += "==";
+    }
+            if (($parts.Length % 4) -eq 3) {
+        $parts += "=";
+    }
+}
+
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($parts)) | ConvertFrom-Json | ConvertTo-Json;
+
+$p = $token.Split('.');
+$parts = $p[1];
+if (($parts.Length % 4) -ne 0) {
+    if (($parts.Length % 4) -eq 1) {
+        $parts += "===";
+    }
+        if (($parts.Length % 4) -eq 2) {
+        $parts += "==";
+    }
+            if (($parts.Length % 4) -eq 3) {
+        $parts += "=";
+    }
+}
+
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($parts)) | ConvertFrom-Json | ConvertTo-Json;
+
+```
+
+
+[Back to top](#table-of-content)
+
+#### Format Xml
+
+```powershell
+
+$xml = [xml]($response.Content.Substring(3));
+$Indent = 2
+$StringWriter = New-Object System.IO.StringWriter
+$XmlWriter = New-Object System.XMl.XmlTextWriter $StringWriter
+$xmlWriter.Formatting = "indented"
+$xmlWriter.Indentation = $Indent
+$xml.WriteContentTo($XmlWriter)
+$XmlWriter.Flush()
+$StringWriter.Flush()
+$StringWriter.ToString()
+
+
+```
+
 
 [Back to top](#table-of-content)
