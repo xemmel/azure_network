@@ -205,9 +205,118 @@ $token;
 
 
 ```
+[Back to top](#table-of-content)
 
+#### Invoke Sql with token
+
+```powershell
+
+Clear-Host;
+# Install-Module -Name SqlServer -Force;
+Invoke-Sqlcmd `
+    -ServerInstance "intdatabase.database.windows.net" `
+    -AccessToken $token `
+    -Database "users" `
+    -Query "select name from sys.database_principals;";
+
+Clear-Host;
+    $spName = "win11";
+    Invoke-Sqlcmd `
+    -ServerInstance "intdatabase.database.windows.net" `
+    -AccessToken $token `
+    -Database "users" `
+    -Query "CREATE USER [$($spName)] FROM EXTERNAL PROVIDER;";
+
+Clear-Host;
+    $spName = "win11";
+    Invoke-Sqlcmd `
+    -ServerInstance "intdatabase.database.windows.net" `
+    -AccessToken $token `
+    -Database "users" `
+    -Query "DROP USER [$($spName)];";
+
+```
 
 [Back to top](#table-of-content)
+
+#### Storage Account commands with Token
+
+##### List Containers
+
+```powershell
+
+Clear-Host;
+$storageAccountName = "intprivatestorage";
+$saUrl = "https://$($storageAccountName).blob.core.windows.net";
+$command = "/?comp=list";
+$url = "$($saUrl)$($command)";
+
+
+$headers = @{"Authorization" = "Bearer $token"; "x-ms-version" = "2021-06-08"};
+
+$response = $null;
+$response = invoke-webrequest -Uri $url -Headers $headers;
+$response.Content
+
+```
+
+##### List Blobs
+
+```powershell
+
+Clear-Host;
+$storageAccountName = "intprivatestorage";
+$containerName = "public";
+$saUrl = "https://$($storageAccountName).blob.core.windows.net/$($containerName)?restype=container`&comp=list";
+#$command = "/?comp=list";
+$url = "$($saUrl)";
+$date = [System.DateTime]::Now.ToUniversalTime().ToString("r");
+
+$headers = @{
+    "Authorization" = "Bearer $token"; 
+    "x-ms-version" = "2021-06-08"; 
+    "x-ms-date" = $date;
+    };
+
+$response = $null;
+$response = invoke-webrequest -Uri $url -Headers $headers;
+$response.Content
+
+```
+
+##### Put Blob
+
+```powershell
+
+Clear-Host;
+$storageAccountName = "intprivatestorage";
+$containerName = "public";
+$blobName = "test.txt";
+$body = @"
+  Hello
+
+"@
+$date = [System.DateTime]::Now.ToUniversalTime().ToString("r");
+$url = "https://$($storageAccountName).blob.core.windows.net/$($containerName)/$($blobName)";
+
+
+
+$headers = @{
+    "Authorization" = "Bearer $token"; 
+    "x-ms-version" = "2021-06-08"; 
+    "x-ms-date" = $date;
+    "x-ms-blob-type" =  "BlockBlob";
+    };
+
+$response = $null;
+$response = invoke-webrequest -Method Put -Uri $url -Body $body -Headers $headers;
+$response.Content
+
+```
+
+[Back to top](#table-of-content)
+
+
 
 ### General scripts
 
@@ -269,6 +378,5 @@ $StringWriter.ToString()
 
 
 ```
-
 
 [Back to top](#table-of-content)
